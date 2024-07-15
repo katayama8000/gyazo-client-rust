@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let upload_params = UploadParamsBuilder::new(image_data)
         .title("My awesome image".to_string())
         .metadata_is_public("true".to_string())
-        .build();
+        .build()?;
     let upload_response = client.upload_image(upload_params).await?;
 
     // Get image information
