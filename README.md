@@ -32,8 +32,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
     let upload_response = client.upload_image(upload_params).await?;
 
-    // Get image information
-    let image_info = client.get_image(&upload_response.image_id).await?;
+    // Get image
+    let image = client.get_image(&upload_response.image_id).await?;
 
     // List images
     let images = client.list_images().await?;
