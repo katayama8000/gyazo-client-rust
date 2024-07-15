@@ -158,7 +158,7 @@ pub struct UploadParams {
     pub app: Option<String>,
     pub title: Option<String>,
     pub desc: Option<String>,
-    pub created_at: Option<f64>,
+    pub created_at: Option<String>,
     pub collection_id: Option<String>,
 }
 
@@ -193,5 +193,88 @@ impl UploadParams {
             params.push(("collection_id".to_string(), collection_id.clone()));
         }
         params
+    }
+}
+
+/// Builder for UploadParams
+pub struct UploadParamsBuilder {
+    imagedata: Vec<u8>,
+    access_policy: Option<String>,
+    metadata_is_public: Option<String>,
+    referer_url: Option<String>,
+    app: Option<String>,
+    title: Option<String>,
+    desc: Option<String>,
+    created_at: Option<String>,
+    collection_id: Option<String>,
+}
+
+impl UploadParamsBuilder {
+    pub fn new(imagedata: Vec<u8>) -> Self {
+        Self {
+            imagedata,
+            access_policy: None,
+            metadata_is_public: None,
+            referer_url: None,
+            app: None,
+            title: None,
+            desc: None,
+            created_at: None,
+            collection_id: None,
+        }
+    }
+
+    pub fn access_policy(mut self, access_policy: impl Into<String>) -> Self {
+        self.access_policy = Some(access_policy.into());
+        self
+    }
+
+    pub fn metadata_is_public(mut self, metadata_is_public: impl Into<String>) -> Self {
+        self.metadata_is_public = Some(metadata_is_public.into());
+        self
+    }
+
+    pub fn referer_url(mut self, referer_url: impl Into<String>) -> Self {
+        self.referer_url = Some(referer_url.into());
+        self
+    }
+
+    pub fn app(mut self, app: impl Into<String>) -> Self {
+        self.app = Some(app.into());
+        self
+    }
+
+    pub fn title(mut self, title: impl Into<String>) -> Self {
+        self.title = Some(title.into());
+        self
+    }
+
+    pub fn desc(mut self, desc: impl Into<String>) -> Self {
+        self.desc = Some(desc.into());
+        self
+    }
+
+    pub fn created_at(mut self, created_at: impl Into<String>) -> Self {
+        self.created_at = Some(created_at.into());
+        self
+    }
+
+    pub fn collection_id(mut self, collection_id: impl Into<String>) -> Self {
+        self.collection_id = Some(collection_id.into());
+        self
+    }
+
+    pub fn build(self) -> UploadParams {
+        UploadParams {
+            imagedata: self.imagedata,
+            access_policy: self.access_policy,
+            metadata_is_public: self.metadata_is_public,
+            referer_url: self.referer_url,
+            app: self.app,
+            title: self.title,
+            desc: self.desc,
+            created_at: self.created_at,
+            collection_id: self.collection_id,
+        }
     }
 }

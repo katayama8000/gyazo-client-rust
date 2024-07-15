@@ -17,19 +17,19 @@ cargo add gyazo_client
 ## Usage
 
 ```rust
-use gyazo_client::{GyazoClient, UploadParams};
+use gyazo_client::{GyazoClient, UploadParams, UploadParamsBuilder};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize the Gyazo client with your access token
     let client = GyazoClient::new("YOUR_ACCESS_TOKEN".to_string());
 
-    // Upload an image
+    // Upload an image with a title
     let image_data = std::fs::read("path/to/your/image.png")?;
-    let upload_params = UploadParams {
-        imagedata: image_data,
-        title: Some("My awesome image".to_string()),
-        ..Default::default()
-    };
+    let upload_params = UploadParamsBuilder::new(image_data)
+        .title("My awesome image".to_string())
+        .metadata_is_public("true".to_string())
+        .build();
     let upload_response = client.upload_image(upload_params).await?;
 
     // Get image information
