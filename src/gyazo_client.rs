@@ -162,7 +162,7 @@ pub struct UploadParams {
 }
 
 impl UploadParams {
-    fn into_form_params(&self) -> Vec<(String, String)> {
+    fn into_form_params(self) -> Vec<(String, String)> {
         let mut params = Vec::new();
         if let Some(access_policy) = &self.access_policy {
             params.push(("access_policy".to_string(), access_policy.clone()));
