@@ -102,8 +102,8 @@ impl GyazoClient {
         self.request(&url, reqwest::Method::DELETE, None).await
     }
 
-    /// OnEnbed an image
-    pub async fn onembed_image(&self, url: &str) -> Result<OembedResponse, GyazoError> {
+    /// get oembed data for an image
+    pub async fn get_oembed(&self, url: &str) -> Result<OembedResponse, GyazoError> {
         if !url.starts_with("https://gyazo.com/") {
             return Err(GyazoError::InvalidUrl(
                 "URL must start with 'https://gyazo.com/'".to_string(),
