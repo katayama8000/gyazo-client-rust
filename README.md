@@ -44,3 +44,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+## References
+- [Gyazo API Documentation](https://gyazo.com/api/docs/image)
