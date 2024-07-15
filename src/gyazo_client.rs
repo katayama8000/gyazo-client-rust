@@ -308,14 +308,12 @@ impl UploadParamsBuilder {
 /// Oembed response from Gyazo API
 #[derive(Debug, Deserialize)]
 pub struct OembedResponse {
+    pub version: String,
+    #[serde(rename = "type")]
+    pub image_type: String,
+    pub provider_name: String,
+    pub provider_url: String,
     pub url: String,
-    pub width: Option<u32>,
-    pub height: Option<u32>,
-    pub version: Option<String>,
-    pub title: Option<String>,
-    pub author_name: Option<String>,
-    pub author_url: Option<String>,
-    pub provider_name: Option<String>,
-    pub provider_url: Option<String>,
-    pub type_: Option<String>,
+    pub width: u32,
+    pub height: u32,
 }
