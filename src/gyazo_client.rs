@@ -278,8 +278,8 @@ impl UploadParamsBuilder {
         self
     }
 
-    pub fn build(self) -> UploadParams {
-        UploadParams {
+    pub fn build(self) -> Result<UploadParams, GyazoError> {
+        Ok(UploadParams {
             imagedata: self.imagedata,
             access_policy: self.access_policy,
             metadata_is_public: self.metadata_is_public,
@@ -289,6 +289,6 @@ impl UploadParamsBuilder {
             desc: self.desc,
             created_at: self.created_at,
             collection_id: self.collection_id,
-        }
+        })
     }
 }
