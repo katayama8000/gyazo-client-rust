@@ -8,15 +8,14 @@ use thiserror::Error;
 pub enum GyazoError {
     #[error("HTTP request failed: {0}")]
     RequestFailed(#[from] reqwest::Error),
-
     #[error("Failed to parse JSON: {0}")]
     JsonParseError(#[from] serde_json::Error),
-
     #[error("API error: {status}, message: {message}")]
     ApiError { status: StatusCode, message: String },
-
     #[error("Unexpected error: {0}")]
     Other(String),
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
 /// Gyazo API client
@@ -224,14 +223,29 @@ impl UploadParamsBuilder {
         }
     }
 
-    pub fn access_policy(mut self, access_policy: impl Into<String>) -> Self {
-        self.access_policy = Some(access_policy.into());
-        self
+    pub fn access_policy(mut self, access_policy: impl Into<String>) -> Result<Self, GyazoError> {
+        let access_policy = access_policy.into();
+        if access_policy != "anyone" && access_policy != "only_me" {
+            return Err(GyazoError::InvalidInput(
+                "access_policy must be 'anyone' or 'only_me'".to_string(),
+            ));
+        }
+        self.access_policy = Some(access_policy);
+        Ok(self)
     }
 
-    pub fn metadata_is_public(mut self, metadata_is_public: impl Into<String>) -> Self {
-        self.metadata_is_public = Some(metadata_is_public.into());
-        self
+    pub fn metadata_is_public(
+        mut self,
+        metadata_is_public: impl Into<String>,
+    ) -> Result<Self, GyazoError> {
+        let metadata_is_public = metadata_is_public.into();
+        if metadata_is_public != "true" && metadata_is_public != "false" {
+            return Err(GyazoError::InvalidInput(
+                "metadata_is_public must be 'true' or 'false'".to_string(),
+            ));
+        }
+        self.metadata_is_public = Some(metadata_is_public);
+        Ok(self)
     }
 
     pub fn referer_url(mut self, referer_url: impl Into<String>) -> Self {
