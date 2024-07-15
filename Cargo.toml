@@ -1,0 +1,10 @@
+[package]
+name = "gyazo_client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.12.5", features = ["json", "blocking", "multipart"] }
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.120"
+thiserror = "1.0.62"
