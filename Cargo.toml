@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/katayama8000/gyazo-client-rust"
 homepage = "https://github.com/katayama8000/gyazo-client-rust/blob/main/README.md"
 keywords = ["gyazo", "client", "api", "rust"]
-categories = ["api-client", "image", "web"]
+categories = ["web-programming", "web-programming::http-client"]
 
 [dependencies]
 reqwest = { version = "0.12.5", features = ["json", "blocking", "multipart"] }
