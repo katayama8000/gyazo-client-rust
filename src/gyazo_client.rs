@@ -16,6 +16,8 @@ pub enum GyazoError {
     Other(String),
     #[error("Invalid input: {0}")]
     InvalidInput(String),
+    #[error("Invalid url: {0}")]
+    InvalidUrl(String),
 }
 
 /// Gyazo API client
@@ -99,6 +101,17 @@ impl GyazoClient {
         let url = format!("https://api.gyazo.com/api/images/{}", image_id);
         self.request(&url, reqwest::Method::DELETE, None).await
     }
+
+    /// OnEnbed an image
+    pub async fn onembed_image(&self, url: &str) -> Result<OembedResponse, GyazoError> {
+        if !url.starts_with("https://gyazo.com/") {
+            return Err(GyazoError::InvalidUrl(
+                "URL must start with 'https://gyazo.com/'".to_string(),
+            ));
+        }
+        let url = format!("https://api.gyazo.com/api/oembed?url={}", url);
+        self.request(&url, reqwest::Method::GET, None).await
+    }
 }
 
 /// Image response from Gyazo API
@@ -164,32 +177,31 @@ pub struct UploadParams {
 impl UploadParams {
     fn into_form_params(self) -> Vec<(String, String)> {
         let mut params = Vec::new();
-        if let Some(access_policy) = &self.access_policy {
-            params.push(("access_policy".to_string(), access_policy.clone()));
+        if let Some(access_policy) = self.access_policy {
+            params.push(("access_policy".to_string(), access_policy));
         }
         params.push((
             "metadata_is_public".to_string(),
             self.metadata_is_public
-                .clone()
                 .unwrap_or_else(|| "true".to_string()),
         ));
-        if let Some(referer_url) = &self.referer_url {
-            params.push(("referer_url".to_string(), referer_url.clone()));
+        if let Some(referer_url) = self.referer_url {
+            params.push(("referer_url".to_string(), referer_url));
         }
-        if let Some(app) = &self.app {
-            params.push(("app".to_string(), app.clone()));
+        if let Some(app) = self.app {
+            params.push(("app".to_string(), app));
         }
-        if let Some(title) = &self.title {
-            params.push(("title".to_string(), title.clone()));
+        if let Some(title) = self.title {
+            params.push(("title".to_string(), title));
         }
-        if let Some(desc) = &self.desc {
-            params.push(("desc".to_string(), desc.clone()));
+        if let Some(desc) = self.desc {
+            params.push(("desc".to_string(), desc));
         }
-        if let Some(created_at) = &self.created_at {
-            params.push(("created_at".to_string(), created_at.to_string()));
+        if let Some(created_at) = self.created_at {
+            params.push(("created_at".to_string(), created_at));
         }
-        if let Some(collection_id) = &self.collection_id {
-            params.push(("collection_id".to_string(), collection_id.clone()));
+        if let Some(collection_id) = self.collection_id {
+            params.push(("collection_id".to_string(), collection_id));
         }
         params
     }
@@ -291,4 +303,19 @@ impl UploadParamsBuilder {
             collection_id: self.collection_id,
         })
     }
+}
+
+/// Oembed response from Gyazo API
+#[derive(Debug, Deserialize)]
+pub struct OembedResponse {
+    pub url: String,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub version: Option<String>,
+    pub title: Option<String>,
+    pub author_name: Option<String>,
+    pub author_url: Option<String>,
+    pub provider_name: Option<String>,
+    pub provider_url: Option<String>,
+    pub type_: Option<String>,
 }
