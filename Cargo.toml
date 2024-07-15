@@ -2,6 +2,14 @@
 name = "gyazo_client"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+authors = ["katayama8000 <https://github.com/katayama8000>"]
+description = "Gyazo Client for Rust"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/katayama8000/gyazo-client-rust"
+homepage = "https://github.com/katayama8000/gyazo-client-rust/blob/main/README.md"
+keywords = ["gyazo", "client", "api", "rust"]
+categories = ["api-client", "image", "web"]
 
 [dependencies]
 reqwest = { version = "0.12.5", features = ["json", "blocking", "multipart"] }
