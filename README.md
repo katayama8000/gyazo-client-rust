@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let delete_response = gyazo_client.delete_image(&upload_response.image_id).await?;
 
     // get oEmbed URL
-    let oembed_url = gyazo_client.get_oembed_url(&upload_response.image_id);
+    let oembed_url = gyazo_client.get_oembed(&upload_response.image_id).await?;
 
     Ok(())
 }
