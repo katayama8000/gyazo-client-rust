@@ -8,14 +8,40 @@ use thiserror::Error;
 pub enum GyazoError {
     #[error("HTTP request failed: {0}")]
     RequestFailed(#[from] reqwest::Error),
+
     #[error("Failed to parse JSON: {0}")]
     JsonParseError(#[from] serde_json::Error),
+
+    #[error("Bad Request: Invalid request parameters")]
+    BadRequest,
+
+    #[error("Unauthorized: Authentication required")]
+    Unauthorized,
+
+    #[error("Forbidden: Access denied")]
+    Forbidden,
+
+    #[error("Not Found")]
+    NotFound,
+
+    #[error("Unprocessable Entity: Server cannot process the request")]
+    UnprocessableEntity,
+
+    #[error("Too Many Requests: Rate limit exceeded")]
+    RateLimitExceeded,
+
+    #[error("Internal Server Error: Unexpected error occurred")]
+    InternalServerError,
+
     #[error("API error: {status}, message: {message}")]
     ApiError { status: StatusCode, message: String },
+
     #[error("Unexpected error: {0}")]
     Other(String),
+
     #[error("Invalid input: {0}")]
     InvalidInput(String),
+
     #[error("Invalid url: {0}")]
     InvalidUrl(String),
 }
@@ -56,6 +82,13 @@ impl GyazoClient {
             StatusCode::OK | StatusCode::CREATED | StatusCode::NO_CONTENT => {
                 Ok(response.json().await?)
             }
+            StatusCode::BAD_REQUEST => Err(GyazoError::BadRequest),
+            StatusCode::UNAUTHORIZED => Err(GyazoError::Unauthorized),
+            StatusCode::FORBIDDEN => Err(GyazoError::Forbidden),
+            StatusCode::NOT_FOUND => Err(GyazoError::NotFound),
+            StatusCode::UNPROCESSABLE_ENTITY => Err(GyazoError::UnprocessableEntity),
+            StatusCode::TOO_MANY_REQUESTS => Err(GyazoError::RateLimitExceeded),
+            StatusCode::INTERNAL_SERVER_ERROR => Err(GyazoError::InternalServerError),
             status => {
                 let message = response
                     .text()
@@ -65,7 +98,6 @@ impl GyazoClient {
             }
         }
     }
-
     /// Get an image by its ID
     pub async fn get_image(&self, image_id: &str) -> Result<GyazoImageResponse, GyazoError> {
         let url = format!("https://api.gyazo.com/api/images/{}", image_id);
@@ -174,6 +206,7 @@ pub struct UploadParams {
     pub collection_id: Option<String>,
 }
 
+/// UploadParams implementation
 impl UploadParams {
     fn into_form_params(self) -> Vec<(String, String)> {
         let mut params = Vec::new();
