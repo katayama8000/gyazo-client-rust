@@ -128,8 +128,8 @@ impl GyazoClient {
 
     /// Delete an image by its ID
     pub async fn delete_image(&self, image_id: &str) -> Result<DeleteImageResponse, GyazoError> {
-        let url = format!("https://api.gyazo.com/api/images/{}", image_id);
-        self.request(&url, reqwest::Method::DELETE, None).await
+        let path = format!("/api/images/{}", image_id);
+        self.request(&path, reqwest::Method::DELETE, None).await
     }
 
     /// get oembed data for an image
@@ -471,6 +471,34 @@ mod tests {
         let image = result?;
         assert_eq!(image.image_id, "abc123");
         assert_eq!(image.permalink_url, "https://gyazo.com/abc123".to_string());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_image() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let mock_response = r#"
+        {
+            "image_id": "abc123",
+            "type": "png"
+        }
+        "#;
+
+        let _mock = server
+            .mock("DELETE", "/api/images/abc123")
+            .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create();
+
+        let client =
+            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let result = client.delete_image("abc123").await;
+
+        assert!(result.is_ok());
+        let image = result?;
+        assert_eq!(image.image_id, "abc123");
         Ok(())
     }
 }
