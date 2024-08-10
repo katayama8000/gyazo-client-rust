@@ -44,7 +44,12 @@ pub struct GyazoClient {
 impl GyazoClient {
     /// Create a new GyazoClient instance
     pub fn new(access_token: String) -> Self {
-        Self::new_with_base_url(access_token, "https://api.gyazo.com".parse().unwrap())
+        Self::new_with_base_url(
+            access_token,
+            "https://api.gyazo.com"
+                .parse()
+                .expect("base URL must be a valid URL"),
+        )
     }
 
     pub fn new_with_base_url(access_token: String, base_url: Url) -> Self {
@@ -61,10 +66,7 @@ impl GyazoClient {
         method: reqwest::Method,
         form: Option<Form>,
     ) -> Result<T, GyazoError> {
-        let url = self
-            .base_url
-            .join(path)
-            .map_err(|_| GyazoError::Other("Invalid URL".to_string()))?;
+        let url = self.base_url.join(path).expect("path must be a valid URL");
         let mut request = self
             .client
             .request(method, url)
