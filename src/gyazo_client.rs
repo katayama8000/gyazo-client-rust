@@ -587,4 +587,16 @@ mod tests {
         );
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_upload_params_builder_invalid_metadata_is_public() -> anyhow::Result<()> {
+        let result = UploadParamsBuilder::new(vec![0, 1, 2, 3])
+            .metadata_is_public("invalid")
+            .unwrap_err();
+        assert_eq!(
+            result.to_string(),
+            "Invalid input: metadata_is_public must be 'true' or 'false'"
+        );
+        Ok(())
+    }
 }
