@@ -113,7 +113,7 @@ impl GyazoClient {
         &self,
         param: UploadParams,
     ) -> Result<UploadImageResponse, GyazoError> {
-        let url = "https://upload.gyazo.com/api/upload".to_string();
+        let path = "/api/upload".to_string();
         let mut form = Form::new().part(
             "imagedata",
             Part::bytes(param.imagedata.clone()).file_name("image.png"),
@@ -123,7 +123,7 @@ impl GyazoClient {
             form = form.text(key, value);
         }
 
-        self.request(&url, reqwest::Method::POST, Some(form)).await
+        self.request(&path, reqwest::Method::POST, Some(form)).await
     }
 
     /// Delete an image by its ID
@@ -435,6 +435,42 @@ mod tests {
         let images = result?;
         assert_eq!(images.len(), 1);
         assert_eq!(images[0].image_id, "abc123");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_upload_image() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let mock_response = r#"
+        {
+            "image_id": "abc123",
+            "permalink_url": "https://gyazo.com/abc123",
+            "thumb_url": "https://thumb.gyazo.com/thumb/abc123",
+            "url": "https://i.gyazo.com/abc123.png",
+            "type": "png"
+        }
+        "#;
+
+        let _mock = server
+            .mock("POST", "/api/upload")
+            .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
+            .match_body(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create();
+
+        let client =
+            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let params = UploadParamsBuilder::new(vec![0, 1, 2, 3])
+            .title("test image")
+            .build()?;
+        let result = client.upload_image(params).await;
+
+        assert!(result.is_ok());
+        let image = result?;
+        assert_eq!(image.image_id, "abc123");
+        assert_eq!(image.permalink_url, "https://gyazo.com/abc123".to_string());
         Ok(())
     }
 }
