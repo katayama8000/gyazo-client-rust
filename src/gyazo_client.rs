@@ -549,4 +549,29 @@ mod tests {
         );
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_upload_params_builder() -> anyhow::Result<()> {
+        let params = UploadParamsBuilder::new(vec![0, 1, 2, 3])
+            .access_policy("anyone")?
+            .metadata_is_public("true")?
+            .referer_url("https://example.com")
+            .app("test app")
+            .title("test image")
+            .desc("test description")
+            .created_at("2024-08-10 12:00:00")
+            .collection_id("test collection")
+            .build()?;
+
+        assert_eq!(params.imagedata, vec![0, 1, 2, 3]);
+        assert_eq!(params.access_policy, Some("anyone".to_string()));
+        assert_eq!(params.metadata_is_public, Some("true".to_string()));
+        assert_eq!(params.referer_url, Some("https://example.com".to_string()));
+        assert_eq!(params.app, Some("test app".to_string()));
+        assert_eq!(params.title, Some("test image".to_string()));
+        assert_eq!(params.desc, Some("test description".to_string()));
+        assert_eq!(params.created_at, Some("2024-08-10 12:00:00".to_string()));
+        assert_eq!(params.collection_id, Some("test collection".to_string()));
+        Ok(())
+    }
 }
