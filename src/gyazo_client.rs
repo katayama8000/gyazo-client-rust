@@ -104,8 +104,8 @@ impl GyazoClient {
 
     /// Get a list of images
     pub async fn list_images(&self) -> Result<Vec<GyazoImageResponse>, GyazoError> {
-        let url = "https://api.gyazo.com/api/images".to_string();
-        self.request(&url, reqwest::Method::GET, None).await
+        let path = "/api/images".to_string();
+        self.request(&path, reqwest::Method::GET, None).await
     }
 
     /// Upload an image
@@ -394,6 +394,47 @@ mod tests {
             image.permalink_url,
             Some("https://gyazo.com/abc123".to_string())
         );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_list_images() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let mock_response = r#"
+        [
+            {
+                "image_id": "abc123",
+                "permalink_url": "https://gyazo.com/abc123",
+                "thumb_url": "https://thumb.gyazo.com/thumb/abc123",
+                "type": "png",
+                "created_at": "2024-08-10 12:00:00",
+                "metadata": {
+                    "app": null,
+                    "title": null,
+                    "url": null,
+                    "desc": null
+                },
+                "ocr": null
+            }
+        ]
+        "#;
+
+        let _mock = server
+            .mock("GET", "/api/images")
+            .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create();
+
+        let client =
+            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let result = client.list_images().await;
+
+        assert!(result.is_ok());
+        let images = result?;
+        assert_eq!(images.len(), 1);
+        assert_eq!(images[0].image_id, "abc123");
         Ok(())
     }
 }
