@@ -537,4 +537,16 @@ mod tests {
         assert_eq!(oembed.image_type, "photo");
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_get_oembed_invalid_url() -> anyhow::Result<()> {
+        let client = GyazoClient::new("fake_token".to_string());
+        let result = client.get_oembed("https://example.com/abc123").await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Invalid url: URL must start with 'https://gyazo.com/'"
+        );
+        Ok(())
+    }
 }
