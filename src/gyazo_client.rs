@@ -1,5 +1,5 @@
 use reqwest::multipart::{Form, Part};
-use reqwest::{Client, StatusCode};
+use reqwest::{Client, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -8,40 +8,28 @@ use thiserror::Error;
 pub enum GyazoError {
     #[error("HTTP request failed: {0}")]
     RequestFailed(#[from] reqwest::Error),
-
     #[error("Failed to parse JSON: {0}")]
     JsonParseError(#[from] serde_json::Error),
-
     #[error("Bad Request: Invalid request parameters")]
     BadRequest,
-
     #[error("Unauthorized: Authentication required")]
     Unauthorized,
-
     #[error("Forbidden: Access denied")]
     Forbidden,
-
     #[error("Not Found")]
     NotFound,
-
     #[error("Unprocessable Entity: Server cannot process the request")]
     UnprocessableEntity,
-
     #[error("Too Many Requests: Rate limit exceeded")]
     RateLimitExceeded,
-
     #[error("Internal Server Error: Unexpected error occurred")]
     InternalServerError,
-
     #[error("API error: {status}, message: {message}")]
     ApiError { status: StatusCode, message: String },
-
     #[error("Unexpected error: {0}")]
     Other(String),
-
     #[error("Invalid input: {0}")]
     InvalidInput(String),
-
     #[error("Invalid url: {0}")]
     InvalidUrl(String),
 }
@@ -50,23 +38,33 @@ pub enum GyazoError {
 pub struct GyazoClient {
     client: Client,
     access_token: String,
+    base_url: Url,
 }
 
 impl GyazoClient {
     /// Create a new GyazoClient instance
     pub fn new(access_token: String) -> Self {
+        Self::new_with_base_url(access_token, "https://api.gyazo.com".parse().unwrap())
+    }
+
+    pub fn new_with_base_url(access_token: String, base_url: Url) -> Self {
         GyazoClient {
             client: Client::new(),
             access_token,
+            base_url,
         }
     }
 
     async fn request<T: for<'de> Deserialize<'de>>(
         &self,
-        url: &str,
+        path: &str,
         method: reqwest::Method,
         form: Option<Form>,
     ) -> Result<T, GyazoError> {
+        let url = self
+            .base_url
+            .join(path)
+            .map_err(|_| GyazoError::Other("Invalid URL".to_string()))?;
         let mut request = self
             .client
             .request(method, url)
@@ -100,8 +98,8 @@ impl GyazoClient {
     }
     /// Get an image by its ID
     pub async fn get_image(&self, image_id: &str) -> Result<GyazoImageResponse, GyazoError> {
-        let url = format!("https://api.gyazo.com/api/images/{}", image_id);
-        self.request(&url, reqwest::Method::GET, None).await
+        let path = format!("/api/images/{}", image_id);
+        self.request(&path, reqwest::Method::GET, None).await
     }
 
     /// Get a list of images
@@ -349,4 +347,53 @@ pub struct OembedResponse {
     pub url: String,
     pub width: u32,
     pub height: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockito::Matcher;
+    use reqwest::Url;
+
+    #[tokio::test]
+    async fn test_get_image() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let mock_response = r#"
+        {
+            "image_id": "abc123",
+            "permalink_url": "https://gyazo.com/abc123",
+            "thumb_url": "https://thumb.gyazo.com/thumb/abc123",
+            "type": "png",
+            "created_at": "2024-08-10 12:00:00",
+            "metadata": {
+                "app": null,
+                "title": null,
+                "url": null,
+                "desc": null
+            },
+            "ocr": null
+        }
+        "#;
+
+        let _mock = server
+            .mock("GET", "/api/images/abc123")
+            .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create();
+
+        let client =
+            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let result = client.get_image("abc123").await;
+
+        assert!(result.is_ok());
+        let image = result?;
+        assert_eq!(image.image_id, "abc123");
+        assert_eq!(
+            image.permalink_url,
+            Some("https://gyazo.com/abc123".to_string())
+        );
+        Ok(())
+    }
 }
