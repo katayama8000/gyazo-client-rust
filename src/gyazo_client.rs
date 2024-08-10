@@ -139,7 +139,7 @@ impl GyazoClient {
                 "URL must start with 'https://gyazo.com/'".to_string(),
             ));
         }
-        let url = format!("https://api.gyazo.com/api/oembed?url={}", url);
+        let url = format!("/api/oembed?url={}", url);
         self.request(&url, reqwest::Method::GET, None).await
     }
 }
@@ -499,6 +499,40 @@ mod tests {
         assert!(result.is_ok());
         let image = result?;
         assert_eq!(image.image_id, "abc123");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_oembed() -> anyhow::Result<()> {
+        let mut server = mockito::Server::new_async().await;
+        let mock_response = r#"
+        {
+            "version": "1.0",
+            "type": "photo",
+            "provider_name": "Gyazo",
+            "provider_url": "https://gyazo.com",
+            "url": "https://i.gyazo.com/abc123.png",
+            "width": 400,
+            "height": 300
+        }
+        "#;
+
+        let _mock = server
+            .mock("GET", "/api/oembed?url=https://gyazo.com/abc123")
+            .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create();
+
+        let client =
+            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let result = client.get_oembed("https://gyazo.com/abc123").await;
+
+        assert!(result.is_ok());
+        let oembed = result?;
+        assert_eq!(oembed.version, "1.0");
+        assert_eq!(oembed.image_type, "photo");
         Ok(())
     }
 }
