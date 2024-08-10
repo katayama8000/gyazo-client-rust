@@ -241,6 +241,7 @@ impl UploadParams {
 }
 
 /// Builder for UploadParams
+#[derive(Debug)]
 pub struct UploadParamsBuilder {
     imagedata: Vec<u8>,
     access_policy: Option<String>,
@@ -572,6 +573,18 @@ mod tests {
         assert_eq!(params.desc, Some("test description".to_string()));
         assert_eq!(params.created_at, Some("2024-08-10 12:00:00".to_string()));
         assert_eq!(params.collection_id, Some("test collection".to_string()));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_upload_params_builder_invalid_access_policy() -> anyhow::Result<()> {
+        let result = UploadParamsBuilder::new(vec![0, 1, 2, 3])
+            .access_policy("invalid")
+            .unwrap_err();
+        assert_eq!(
+            result.to_string(),
+            "Invalid input: access_policy must be 'anyone' or 'only_me'"
+        );
         Ok(())
     }
 }
