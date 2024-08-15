@@ -141,15 +141,8 @@ impl GyazoClient {
             form = form.text(key, value);
         }
 
-        self.client
-            .request(reqwest::Method::POST, upload_url)
-            .bearer_auth(&self.access_token)
-            .multipart(form)
-            .send()
-            .await?
-            .json::<UploadImageResponse>()
+        self.request(upload_url.as_str(), reqwest::Method::POST, Some(form))
             .await
-            .map_err(GyazoError::from)
     }
 
     /// Delete an image by its ID
