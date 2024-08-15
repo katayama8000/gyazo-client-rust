@@ -577,8 +577,7 @@ mod tests {
     async fn test_get_oembed_invalid_url() -> anyhow::Result<()> {
         let client = GyazoClient::new(GyazoClientOptions {
             access_token: "fake_token".to_string(),
-            base_url: None,
-            upload_url: None,
+            ..Default::default()
         });
         let result = client.get_oembed("https://example.com/abc123").await;
         assert!(result.is_err());
