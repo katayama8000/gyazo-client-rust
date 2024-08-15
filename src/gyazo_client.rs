@@ -42,34 +42,35 @@ pub struct GyazoClient {
     upload_url: Url,
 }
 
+#[derive(Default)]
+pub struct GyazoClientOptions {
+    access_token: String,
+    base_url: Option<String>,
+    upload_url: Option<String>,
+}
+
 impl GyazoClient {
     /// Create a new GyazoClient instance
-    pub fn new(access_token: String, base_url: Option<String>, upload_url: Option<String>) -> Self {
-        let base_url = base_url
+    pub fn new(options: GyazoClientOptions) -> Self {
+        let base_url = options
+            .base_url
             .map(|url| Url::parse(&url).expect("base_url must be a valid URL"))
             .unwrap_or_else(|| {
                 Url::parse("https://api.gyazo.com").expect("base_url must be a valid URL")
             });
-        let upload_url = upload_url
+        let upload_url = options
+            .upload_url
             .map(|url| Url::parse(&url).expect("upload_url must be a valid URL"))
             .unwrap_or_else(|| {
                 Url::parse("https://upload.gyazo.com").expect("upload_url must be a valid URL")
             });
         GyazoClient {
             client: Client::new(),
-            access_token,
+            access_token: options.access_token,
             base_url,
             upload_url,
         }
     }
-
-    // pub fn new_with_base_url(access_token: String, base_url: Url) -> Self {
-    //     GyazoClient {
-    //         client: Client::new(),
-    //         access_token,
-    //         base_url,
-    //     }
-    // }
 
     async fn request<T: for<'de> Deserialize<'de>>(
         &self,
@@ -408,7 +409,11 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
+        let client = GyazoClient::new(GyazoClientOptions {
+            access_token: "fake_token".to_string(),
+            base_url: Some(server.url().to_string()),
+            upload_url: None,
+        });
         let result = client.get_image("abc123").await;
 
         assert!(result.is_ok());
@@ -451,7 +456,12 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
+        let client = GyazoClient::new(GyazoClientOptions {
+            access_token: "fake_token".to_string(),
+            base_url: Some(server.url().to_string()),
+            upload_url: None,
+        });
+
         let result = client.list_images().await;
 
         assert!(result.is_ok());
@@ -483,7 +493,11 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client = GyazoClient::new("fake_token".to_string(), None, Some(server.url()));
+        let client = GyazoClient::new(GyazoClientOptions {
+            access_token: "fake_token".to_string(),
+            base_url: None,
+            upload_url: Some(server.url().to_string()),
+        });
         let params = UploadParamsBuilder::new(vec![0, 1, 2, 3])
             .title("test image")
             .build()?;
@@ -514,7 +528,11 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
+        let client = GyazoClient::new(GyazoClientOptions {
+            access_token: "fake_token".to_string(),
+            base_url: Some(server.url().to_string()),
+            upload_url: None,
+        });
         let result = client.delete_image("abc123").await;
 
         assert!(result.is_ok());
@@ -546,7 +564,11 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
+        let client = GyazoClient::new(GyazoClientOptions {
+            access_token: "fake_token".to_string(),
+            base_url: Some(server.url().to_string()),
+            upload_url: None,
+        });
         let result = client.get_oembed("https://gyazo.com/abc123").await;
 
         assert!(result.is_ok());
@@ -558,7 +580,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_oembed_invalid_url() -> anyhow::Result<()> {
-        let client = GyazoClient::new("fake_token".to_string(), None, None);
+        let client = GyazoClient::new(GyazoClientOptions {
+            access_token: "fake_token".to_string(),
+            base_url: None,
+            upload_url: None,
+        });
         let result = client.get_oembed("https://example.com/abc123").await;
         assert!(result.is_err());
         assert_eq!(
