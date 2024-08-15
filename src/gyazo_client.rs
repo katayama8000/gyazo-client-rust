@@ -39,26 +39,37 @@ pub struct GyazoClient {
     client: Client,
     access_token: String,
     base_url: Url,
+    upload_url: Url,
 }
 
 impl GyazoClient {
     /// Create a new GyazoClient instance
-    pub fn new(access_token: String) -> Self {
-        Self::new_with_base_url(
-            access_token,
-            "https://api.gyazo.com"
-                .parse()
-                .expect("base URL must be a valid URL"),
-        )
-    }
-
-    pub fn new_with_base_url(access_token: String, base_url: Url) -> Self {
+    pub fn new(access_token: String, base_url: Option<String>, upload_url: Option<String>) -> Self {
+        let base_url = base_url
+            .map(|url| Url::parse(&url).expect("base_url must be a valid URL"))
+            .unwrap_or_else(|| {
+                Url::parse("https://api.gyazo.com").expect("base_url must be a valid URL")
+            });
+        let upload_url = upload_url
+            .map(|url| Url::parse(&url).expect("upload_url must be a valid URL"))
+            .unwrap_or_else(|| {
+                Url::parse("https://upload.gyazo.com").expect("upload_url must be a valid URL")
+            });
         GyazoClient {
             client: Client::new(),
             access_token,
             base_url,
+            upload_url,
         }
     }
+
+    // pub fn new_with_base_url(access_token: String, base_url: Url) -> Self {
+    //     GyazoClient {
+    //         client: Client::new(),
+    //         access_token,
+    //         base_url,
+    //     }
+    // }
 
     async fn request<T: for<'de> Deserialize<'de>>(
         &self,
@@ -115,7 +126,11 @@ impl GyazoClient {
         &self,
         param: UploadParams,
     ) -> Result<UploadImageResponse, GyazoError> {
-        let path = "/api/upload".to_string();
+        let upload_url = self
+            .upload_url
+            .join("/api/upload")
+            .expect("Upload URL must be valid");
+
         let mut form = Form::new().part(
             "imagedata",
             Part::bytes(param.imagedata.clone()).file_name("image.png"),
@@ -125,7 +140,15 @@ impl GyazoClient {
             form = form.text(key, value);
         }
 
-        self.request(&path, reqwest::Method::POST, Some(form)).await
+        self.client
+            .request(reqwest::Method::POST, upload_url)
+            .bearer_auth(&self.access_token)
+            .multipart(form)
+            .send()
+            .await?
+            .json::<UploadImageResponse>()
+            .await
+            .map_err(GyazoError::from)
     }
 
     /// Delete an image by its ID
@@ -356,7 +379,6 @@ pub struct OembedResponse {
 mod tests {
     use super::*;
     use mockito::Matcher;
-    use reqwest::Url;
 
     #[tokio::test]
     async fn test_get_image() -> anyhow::Result<()> {
@@ -386,8 +408,7 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client =
-            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
         let result = client.get_image("abc123").await;
 
         assert!(result.is_ok());
@@ -430,8 +451,7 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client =
-            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
         let result = client.list_images().await;
 
         assert!(result.is_ok());
@@ -445,14 +465,14 @@ mod tests {
     async fn test_upload_image() -> anyhow::Result<()> {
         let mut server = mockito::Server::new_async().await;
         let mock_response = r#"
-        {
-            "image_id": "abc123",
-            "permalink_url": "https://gyazo.com/abc123",
-            "thumb_url": "https://thumb.gyazo.com/thumb/abc123",
-            "url": "https://i.gyazo.com/abc123.png",
-            "type": "png"
-        }
-        "#;
+    {
+        "image_id": "abc123",
+        "permalink_url": "https://gyazo.com/abc123",
+        "thumb_url": "https://thumb.gyazo.com/thumb/abc123",
+        "url": "https://i.gyazo.com/abc123.png",
+        "type": "png"
+    }
+    "#;
 
         let _mock = server
             .mock("POST", "/api/upload")
@@ -463,8 +483,11 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client =
-            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let client = GyazoClient::new(
+            "fake_token".to_string(),
+            Some(server.url()),
+            Some(server.url()),
+        );
         let params = UploadParamsBuilder::new(vec![0, 1, 2, 3])
             .title("test image")
             .build()?;
@@ -495,8 +518,7 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client =
-            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
         let result = client.delete_image("abc123").await;
 
         assert!(result.is_ok());
@@ -528,8 +550,7 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client =
-            GyazoClient::new_with_base_url("fake_token".to_string(), Url::parse(&server.url())?);
+        let client = GyazoClient::new("fake_token".to_string(), Some(server.url()), None);
         let result = client.get_oembed("https://gyazo.com/abc123").await;
 
         assert!(result.is_ok());
@@ -541,7 +562,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_oembed_invalid_url() -> anyhow::Result<()> {
-        let client = GyazoClient::new("fake_token".to_string());
+        let client = GyazoClient::new("fake_token".to_string(), None, None);
         let result = client.get_oembed("https://example.com/abc123").await;
         assert!(result.is_err());
         assert_eq!(
