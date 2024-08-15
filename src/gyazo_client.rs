@@ -44,9 +44,9 @@ pub struct GyazoClient {
 
 #[derive(Default)]
 pub struct GyazoClientOptions {
-    access_token: String,
-    base_url: Option<String>,
-    upload_url: Option<String>,
+    pub access_token: String,
+    pub base_url: Option<String>,
+    pub upload_url: Option<String>,
 }
 
 impl GyazoClient {
