@@ -78,7 +78,13 @@ impl GyazoClient {
         method: reqwest::Method,
         form: Option<Form>,
     ) -> Result<T, GyazoError> {
-        let url = self.base_url.join(path).expect("path must be a valid URL");
+        let url = if path == "/api/upload" {
+            self.upload_url
+                .join(path)
+                .expect("path must be a valid URL")
+        } else {
+            self.base_url.join(path).expect("path must be a valid URL")
+        };
         let mut request = self
             .client
             .request(method, url)
@@ -127,10 +133,7 @@ impl GyazoClient {
         &self,
         param: UploadParams,
     ) -> Result<UploadImageResponse, GyazoError> {
-        let upload_url = self
-            .upload_url
-            .join("/api/upload")
-            .expect("Upload URL must be valid");
+        let path = "/api/upload";
 
         let mut form = Form::new().part(
             "imagedata",
@@ -141,8 +144,7 @@ impl GyazoClient {
             form = form.text(key, value);
         }
 
-        self.request(upload_url.as_str(), reqwest::Method::POST, Some(form))
-            .await
+        self.request(path, reqwest::Method::POST, Some(form)).await
     }
 
     /// Delete an image by its ID
