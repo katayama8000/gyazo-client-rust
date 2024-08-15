@@ -72,6 +72,14 @@ impl GyazoClient {
         }
     }
 
+    // pub fn new_with_base_url(access_token: String, base_url: Url) -> Self {
+    //     GyazoClient {
+    //         client: Client::new(),
+    //         access_token,
+    //         base_url,
+    //     }
+    // }
+
     async fn request<T: for<'de> Deserialize<'de>>(
         &self,
         path: &str,
