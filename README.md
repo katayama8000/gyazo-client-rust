@@ -27,7 +27,7 @@ use gyazo_client::{GyazoClient, UploadParams, UploadParamsBuilder};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize the Gyazo client with your access token
-    let gyazo_client = GyazoClient::new("YOUR_ACCESS_TOKEN".to_string());
+    let gyazo_client = GyazoClient::new("YOUR_ACCESS_TOKEN".to_string(), ..Default::default());
 
     // Upload an image with a title and metadata_is_public
     let image_data = std::fs::read("path/to/your/image.png")?;
