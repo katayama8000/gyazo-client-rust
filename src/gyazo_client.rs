@@ -157,7 +157,7 @@ impl GyazoClient {
         self.request(&path, reqwest::Method::DELETE, None).await
     }
 
-    /// get oembed data for an image
+    /// Get oembed data for an image
     pub async fn get_oembed(&self, url: &str) -> Result<OembedResponse, GyazoError> {
         if !url.starts_with("https://gyazo.com/") {
             return Err(GyazoError::InvalidUrl(
@@ -400,7 +400,7 @@ mod tests {
         }
         "#;
 
-        let _mock = server
+        server
             .mock("GET", "/api/images/abc123")
             .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
             .with_status(200)
@@ -443,7 +443,7 @@ mod tests {
         ]
         "#;
 
-        let _mock = server
+        server
             .mock("GET", "/api/images")
             .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
             .with_status(200)
@@ -474,7 +474,7 @@ mod tests {
     }
     "#;
 
-        let _mock = server
+        server
             .mock("POST", "/api/upload")
             .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
             .match_body(Matcher::Any)
@@ -483,11 +483,7 @@ mod tests {
             .with_body(mock_response)
             .create();
 
-        let client = GyazoClient::new(
-            "fake_token".to_string(),
-            Some(server.url()),
-            Some(server.url()),
-        );
+        let client = GyazoClient::new("fake_token".to_string(), None, Some(server.url()));
         let params = UploadParamsBuilder::new(vec![0, 1, 2, 3])
             .title("test image")
             .build()?;
@@ -510,7 +506,7 @@ mod tests {
         }
         "#;
 
-        let _mock = server
+        server
             .mock("DELETE", "/api/images/abc123")
             .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
             .with_status(200)
@@ -542,7 +538,7 @@ mod tests {
         }
         "#;
 
-        let _mock = server
+        server
             .mock("GET", "/api/oembed?url=https://gyazo.com/abc123")
             .match_header("Authorization", Matcher::Regex("Bearer .+".to_string()))
             .with_status(200)
