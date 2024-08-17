@@ -218,35 +218,35 @@ pub struct UploadParams {
     pub collection_id: Option<String>,
 }
 
-impl Into<reqwest::multipart::Form> for UploadParams {
-    fn into(self) -> reqwest::multipart::Form {
+impl From<UploadParams> for reqwest::multipart::Form {
+    fn from(params: UploadParams) -> Self {
         let mut form = reqwest::multipart::Form::new().part(
             "imagedata",
-            reqwest::multipart::Part::bytes(self.imagedata).file_name("image.png"),
+            reqwest::multipart::Part::bytes(params.imagedata).file_name("image.png"),
         );
         form = form.text(
             "access_policy",
-            self.access_policy.unwrap_or_else(|| "anyone".to_string()),
+            params.access_policy.unwrap_or_else(|| "anyone".to_string()),
         );
-        if let Some(metadata_is_public) = self.metadata_is_public {
+        if let Some(metadata_is_public) = params.metadata_is_public {
             form = form.text("metadata_is_public", metadata_is_public);
         }
-        if let Some(referer_url) = self.referer_url {
+        if let Some(referer_url) = params.referer_url {
             form = form.text("referer_url", referer_url);
         }
-        if let Some(app) = self.app {
+        if let Some(app) = params.app {
             form = form.text("app", app);
         }
-        if let Some(title) = self.title {
+        if let Some(title) = params.title {
             form = form.text("title", title);
         }
-        if let Some(desc) = self.desc {
+        if let Some(desc) = params.desc {
             form = form.text("desc", desc);
         }
-        if let Some(created_at) = self.created_at {
+        if let Some(created_at) = params.created_at {
             form = form.text("created_at", created_at);
         }
-        if let Some(collection_id) = self.collection_id {
+        if let Some(collection_id) = params.collection_id {
             form = form.text("collection_id", collection_id);
         }
         form
