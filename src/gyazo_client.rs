@@ -1,4 +1,4 @@
-use reqwest::multipart::{Form, Part};
+use reqwest::multipart::Form;
 use reqwest::{Client, StatusCode, Url};
 use serde::Deserialize;
 use thiserror::Error;
@@ -134,16 +134,7 @@ impl GyazoClient {
         param: UploadParams,
     ) -> Result<UploadImageResponse, GyazoError> {
         let path = "/api/upload";
-
-        let mut form = Form::new().part(
-            "imagedata",
-            Part::bytes(param.imagedata.clone()).file_name("image.png"),
-        );
-
-        for (key, value) in param.into_form_params() {
-            form = form.text(key, value);
-        }
-
+        let form = param.into();
         self.request(path, reqwest::Method::POST, Some(form)).await
     }
 
@@ -225,37 +216,38 @@ pub struct UploadParams {
     pub collection_id: Option<String>,
 }
 
-/// UploadParams implementation
-impl UploadParams {
-    fn into_form_params(self) -> Vec<(String, String)> {
-        let mut params = Vec::new();
-        if let Some(access_policy) = self.access_policy {
-            params.push(("access_policy".to_string(), access_policy));
+impl Into<reqwest::multipart::Form> for UploadParams {
+    fn into(self) -> reqwest::multipart::Form {
+        let mut form = reqwest::multipart::Form::new().part(
+            "imagedata",
+            reqwest::multipart::Part::bytes(self.imagedata).file_name("image.png"),
+        );
+        form = form.text(
+            "access_policy",
+            self.access_policy.unwrap_or_else(|| "anyone".to_string()),
+        );
+        if let Some(metadata_is_public) = self.metadata_is_public {
+            form = form.text("metadata_is_public", metadata_is_public);
         }
-        params.push((
-            "metadata_is_public".to_string(),
-            self.metadata_is_public
-                .unwrap_or_else(|| "true".to_string()),
-        ));
         if let Some(referer_url) = self.referer_url {
-            params.push(("referer_url".to_string(), referer_url));
+            form = form.text("referer_url", referer_url);
         }
         if let Some(app) = self.app {
-            params.push(("app".to_string(), app));
+            form = form.text("app", app);
         }
         if let Some(title) = self.title {
-            params.push(("title".to_string(), title));
+            form = form.text("title", title);
         }
         if let Some(desc) = self.desc {
-            params.push(("desc".to_string(), desc));
+            form = form.text("desc", desc);
         }
         if let Some(created_at) = self.created_at {
-            params.push(("created_at".to_string(), created_at));
+            form = form.text("created_at", created_at);
         }
         if let Some(collection_id) = self.collection_id {
-            params.push(("collection_id".to_string(), collection_id));
+            form = form.text("collection_id", collection_id);
         }
-        params
+        form
     }
 }
 
