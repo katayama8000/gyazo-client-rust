@@ -3,6 +3,9 @@ use reqwest::{Client, StatusCode, Url};
 use serde::Deserialize;
 use thiserror::Error;
 
+const DEFAULT_BASE_URL: &str = "https://api.gyazo.com";
+const DEFAULT_UPLOAD_URL: &str = "https://upload.gyazo.com";
+
 /// Error types for the Gyazo API client
 #[derive(Error, Debug)]
 pub enum GyazoError {
@@ -35,6 +38,7 @@ pub enum GyazoError {
 }
 
 /// Gyazo API client
+#[derive(Clone, Debug)]
 pub struct GyazoClient {
     client: Client,
     access_token: String,
@@ -42,7 +46,7 @@ pub struct GyazoClient {
     upload_url: Url,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Debug)]
 pub struct GyazoClientOptions {
     pub access_token: String,
     pub base_url: Option<String>,
@@ -55,14 +59,12 @@ impl GyazoClient {
         let base_url = options
             .base_url
             .map(|url| Url::parse(&url).expect("base_url must be a valid URL"))
-            .unwrap_or_else(|| {
-                Url::parse("https://api.gyazo.com").expect("base_url must be a valid URL")
-            });
+            .unwrap_or_else(|| Url::parse(DEFAULT_BASE_URL).expect("base_url must be a valid URL"));
         let upload_url = options
             .upload_url
             .map(|url| Url::parse(&url).expect("upload_url must be a valid URL"))
             .unwrap_or_else(|| {
-                Url::parse("https://upload.gyazo.com").expect("upload_url must be a valid URL")
+                Url::parse(DEFAULT_UPLOAD_URL).expect("upload_url must be a valid URL")
             });
         GyazoClient {
             client: Client::new(),
