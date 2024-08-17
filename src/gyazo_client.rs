@@ -1,6 +1,6 @@
 use reqwest::multipart::{Form, Part};
 use reqwest::{Client, StatusCode, Url};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use thiserror::Error;
 
 /// Error types for the Gyazo API client
@@ -212,7 +212,7 @@ pub struct DeleteImageResponse {
 }
 
 /// Parameters for uploading an image
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug)]
 pub struct UploadParams {
     pub imagedata: Vec<u8>,
     pub access_policy: Option<String>,
