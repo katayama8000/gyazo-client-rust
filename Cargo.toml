@@ -20,4 +20,4 @@ thiserror = "1.0.65"
 [dev-dependencies]
 tokio = { version = "1.41.0", features = ["full"] }
 mockito = "1.5.0"
-anyhow = "1.0.90"
+anyhow = "1.0.91"
