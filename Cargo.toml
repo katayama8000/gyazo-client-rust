@@ -19,5 +19,5 @@ thiserror = "2.0.3"
 
 [dev-dependencies]
 tokio = { version = "1.41.1", features = ["full"] }
-mockito = "1.6.0"
+mockito = "1.6.1"
 anyhow = "1.0.93"
